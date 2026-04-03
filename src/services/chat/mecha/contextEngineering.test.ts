@@ -87,21 +87,7 @@ describe('contextEngineering', () => {
     });
 
     expect(agentDocumentService.getDocuments).not.toHaveBeenCalled();
-    const documentsMessage = output.find(
-      (message) =>
-        message.role === 'system' &&
-        typeof message.content === 'string' &&
-        message.content.includes('<documents>'),
-    );
-
-    expect(documentsMessage).toEqual({
-      content: expect.stringContaining('<documents>'),
-      role: 'system',
-    });
-    expect(documentsMessage).toEqual({
-      content: expect.stringContaining('setup.md'),
-      role: 'system',
-    });
+    expect(output).toMatchSnapshot();
   });
 
   describe('handle with files content in server mode', () => {
