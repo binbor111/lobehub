@@ -1,6 +1,6 @@
 import debug from 'debug';
 
-import { BaseVirtualLastUserContentProvider } from '../base/BaseVirtualLastUserContentProvider';
+import { BaseFirstUserContentProvider } from '../base/BaseFirstUserContentProvider';
 import type { PipelineContext, ProcessorOptions } from '../types';
 
 const log = debug('context-engine:provider:OnboardingContextInjector');
@@ -20,11 +20,11 @@ export interface OnboardingContextInjectorConfig {
 }
 
 /**
- * Onboarding Context Injector
- * Injects onboarding phase guidance and document contents at the virtual last-user position.
- * Replaces the need for LLM to call getOnboardingState and readDocument tools.
+ * Onboarding Context Injector (FirstUser position)
+ * Injects onboarding phase guidance and document contents before the first user message.
+ * Stable content that benefits from KV cache hits.
  */
-export class OnboardingContextInjector extends BaseVirtualLastUserContentProvider {
+export class OnboardingContextInjector extends BaseFirstUserContentProvider {
   readonly name = 'OnboardingContextInjector';
 
   constructor(
@@ -34,7 +34,12 @@ export class OnboardingContextInjector extends BaseVirtualLastUserContentProvide
     super(options);
   }
 
-  protected shouldSkip(context: PipelineContext): boolean {
+  protected buildContent(context: PipelineContext): string | null {
+    if (!this.config.enabled || !this.config.onboardingContext?.phaseGuidance) {
+      log('Disabled or no phaseGuidance configured, skipping injection');
+      return null;
+    }
+
     const alreadyInjected = context.messages.some(
       (message) =>
         typeof message.content === 'string' && message.content.includes('<onboarding_context>'),
@@ -42,14 +47,6 @@ export class OnboardingContextInjector extends BaseVirtualLastUserContentProvide
 
     if (alreadyInjected) {
       log('Onboarding context already injected, skipping');
-    }
-
-    return alreadyInjected;
-  }
-
-  protected buildContent(_context: PipelineContext): string | null {
-    if (!this.config.enabled || !this.config.onboardingContext?.phaseGuidance) {
-      log('Disabled or no phaseGuidance configured, skipping injection');
       return null;
     }
 

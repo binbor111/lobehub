@@ -39,7 +39,9 @@ import {
   GTDTodoInjector,
   HistorySummaryProvider,
   KnowledgeInjector,
+  OnboardingActionHintInjector,
   OnboardingContextInjector,
+  OnboardingSyntheticStateInjector,
   PageEditorContextInjector,
   PageSelectionsInjector,
   SelectedSkillInjector,
@@ -296,6 +298,11 @@ export class MessagesEngine {
         enabled: isGroupAgentBuilderEnabled,
         groupContext: groupAgentBuilderContext,
       }),
+      // Onboarding context (phase guidance + document contents — stable, cacheable)
+      new OnboardingContextInjector({
+        enabled: !!onboardingContext?.phaseGuidance,
+        onboardingContext,
+      }),
 
       // =============================================
       // Phase 4: User Message Augmentation
@@ -338,8 +345,13 @@ export class MessagesEngine {
       // Inject high-churn runtime guidance at the tail to preserve stable prefix caching
       // =============================================
 
-      // Onboarding context (phase guidance + document contents)
-      new OnboardingContextInjector({
+      // Onboarding synthetic state (fake getOnboardingState tool call pair to drive action loop)
+      new OnboardingSyntheticStateInjector({
+        enabled: !!onboardingContext?.phaseGuidance,
+        onboardingContext,
+      }),
+      // Onboarding action hints (phase-specific tool call reminders)
+      new OnboardingActionHintInjector({
         enabled: !!onboardingContext?.phaseGuidance,
         onboardingContext,
       }),
